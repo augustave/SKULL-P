@@ -12,13 +12,16 @@
         --border: #2a2219;
         --text: #d9cfb4;
         --text-dim: #8b8168;
-        --text-faint: #5a523f;
+        --text-faint: #8a7f5f;
+        --text-mute: #6a604a;
         --accent: #c8401a;
         --accent-hot: #ff6030;
         --amber: #d4a054;
         --ok: #6a9b5a;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+    button:focus-visible, .section-hdr:focus-visible { outline-offset: 3px; }
     html, body { width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
     body.dragging::after {
         content: 'DROP IMAGE TO LOAD';
@@ -67,16 +70,30 @@
     }
     .section-hdr:hover { color: var(--text); }
     .section-hdr::before { content: '◈'; color: var(--accent); margin-right: 8px; font-size: 9px; }
-    .section-hdr .chev { font-size: 9px; transition: transform 0.2s; color: var(--text-faint); }
+    .section-hdr .chev { font-size: 11px; transition: transform 0.2s; color: var(--text-mute); font-family: 'Courier New', monospace; }
     .section.collapsed .chev { transform: rotate(-90deg); }
     .section.collapsed .section-body { display: none; }
     .section-body { padding: 4px 14px 14px; }
 
     .row { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; font-size: 11px; }
     .row label { flex: 0 0 80px; color: var(--text-faint); font-family: 'Courier New', monospace; letter-spacing: 1px; text-transform: uppercase; font-size: 9px; }
-    .row input[type=range] { flex: 1; height: 2px; accent-color: var(--accent); background: var(--border); border-radius: 1px; }
-    .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; background: var(--accent); border-radius: 50%; cursor: pointer; }
-    .row input[type=range]::-moz-range-thumb { width: 11px; height: 11px; background: var(--accent); border-radius: 50%; border: none; cursor: pointer; }
+    .row input[type=range] { flex: 1; height: 4px; accent-color: var(--accent); background: var(--border); border-radius: 2px; }
+    .row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; cursor: pointer; transition: transform 0.12s; }
+    .row input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+    .row input[type=range]::-moz-range-thumb { width: 14px; height: 14px; background: var(--accent); border-radius: 50%; border: none; cursor: pointer; transition: transform 0.12s; }
+    .row input[type=range]::-moz-range-thumb:hover { transform: scale(1.15); }
+
+    .fx-group-label {
+        font-size: 8px; letter-spacing: 2px; color: var(--text-mute);
+        font-family: 'Courier New', monospace; margin: 8px 0 6px; padding-top: 6px;
+        border-top: 1px solid var(--border);
+    }
+    .fx-group-label:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+    .sub-control {
+        margin-left: 12px; padding-left: 10px;
+        border-left: 1px solid var(--border); margin-top: -2px; margin-bottom: 10px;
+    }
     .row .v { flex: 0 0 38px; text-align: right; color: var(--text); font-family: 'Courier New', monospace; font-size: 10px; }
 
     .btn {
@@ -86,7 +103,7 @@
         margin-bottom: 6px;
     }
     .btn:hover { border-color: var(--accent); color: var(--text); background: rgba(200,64,26,0.08); }
-    .btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,64,26,0.12); }
+    .btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,64,26,0.12); box-shadow: inset 3px 0 0 var(--accent); }
     .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
     .btn.primary:hover { background: var(--accent-hot); color: #fff; }
     .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -109,9 +126,9 @@
     /* ── STAGE ── */
     #stage {
         position: relative; display: flex; align-items: center; justify-content: center;
-        background: #000; overflow: hidden;
+        background: #000; overflow: hidden; padding: 16px;
     }
-    #stage canvas { display: block; max-width: 100%; max-height: 100%; }
+    #stage canvas { display: block; max-width: 100%; max-height: 100%; box-shadow: inset 0 0 0 1px var(--border), inset 0 0 40px rgba(0,0,0,0.5); }
     #overlay { position: absolute; inset: 0; pointer-events: none; }
     .marker {
         position: absolute; transform: translate(-50%, -50%);
@@ -150,6 +167,7 @@
         display: flex; align-items: center; padding: 0 14px; gap: 14px;
         font-family: 'Courier New', monospace; font-size: 10px; color: var(--text-faint); letter-spacing: 1px;
     }
+    footer span:last-child { color: var(--text-mute); }
     footer .ft-btn {
         background: transparent; border: none; color: var(--text-dim); cursor: pointer;
         padding: 4px 8px; font-size: 11px; border-radius: 3px;
@@ -183,7 +201,7 @@
     #help .k { display: grid; grid-template-columns: 80px 1fr; gap: 12px; font-size: 11px; margin-bottom: 6px; }
     #help .k kbd { background: var(--panel-2); border: 1px solid var(--border); padding: 2px 6px; border-radius: 2px; color: var(--amber); text-align: center; font-family: inherit; font-size: 10px; }
     #help .k span { color: var(--text-dim); padding-top: 2px; }
-    #help .close-hint { margin-top: 20px; font-size: 10px; color: var(--text-faint); text-align: center; }
+    #help .close-hint { margin-top: 20px; font-size: 10px; color: var(--text-mute); text-align: center; }
 
     input[type=file] { display: none; }
 </style>
@@ -202,9 +220,9 @@
         <aside id="sidebar">
             <!-- SOURCE -->
             <div class="section" id="sec-source">
-                <div class="section-hdr">SOURCE <span class="chev">▾</span></div>
+                <div class="section-hdr" role="button" tabindex="0">SOURCE <span class="chev">−</span></div>
                 <div class="section-body">
-                    <button class="btn primary" id="btn-load">▲ LOAD IMAGE</button>
+                    <button class="btn" id="btn-load">↑ LOAD IMAGE</button>
                     <input type="file" id="file-input" accept="image/*">
                     <div class="info" id="img-info"><strong>DEFAULT:</strong> archival_skull.png</div>
                     <div class="info" id="img-dims"></div>
@@ -213,38 +231,43 @@
 
             <!-- COMPOSITION -->
             <div class="section" id="sec-comp">
-                <div class="section-hdr">COMPOSITION <span class="chev">▾</span></div>
+                <div class="section-hdr" role="button" tabindex="0">COMPOSITION <span class="chev">−</span></div>
                 <div class="section-body">
                     <button class="btn" id="btn-place-circle">◯ PLACE STORM CENTER</button>
-                    <div class="row">
-                        <label>Radius</label>
-                        <input id="s-cr" type="range" min="0.05" max="0.5" step="0.005" value="0.22">
-                        <span class="v" id="v-cr">0.22</span>
+                    <div class="sub-control">
+                        <div class="row">
+                            <label>Radius</label>
+                            <input id="s-cr" type="range" min="0.05" max="0.5" step="0.005" value="0.22">
+                            <span class="v" id="v-cr">0.22</span>
+                        </div>
                     </div>
-                    <button class="btn" id="btn-place-eye1">● PLACE EYE 1</button>
-                    <button class="btn" id="btn-place-eye2">● PLACE EYE 2</button>
+                    <button class="btn" id="btn-place-eye1">◉⟵ PLACE LEFT EYE</button>
+                    <button class="btn" id="btn-place-eye2">PLACE RIGHT EYE ⟶◉</button>
                     <button class="btn" id="btn-toggle-markers">◉ SHOW MARKERS</button>
                 </div>
             </div>
 
             <!-- EFFECTS -->
             <div class="section" id="sec-fx">
-                <div class="section-hdr">EFFECTS <span class="chev">▾</span></div>
+                <div class="section-hdr" role="button" tabindex="0">EFFECTS <span class="chev">−</span></div>
                 <div class="section-body">
+                    <div class="fx-group-label">STORM</div>
                     <div class="row"><label>Storm</label><input id="s1" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v1">1.00</span></div>
                     <div class="row"><label>Turbulence</label><input id="s2" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v2">1.00</span></div>
-                    <div class="row"><label>Ember</label><input id="s3" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v3">1.00</span></div>
                     <div class="row"><label>Lightning</label><input id="s4" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v4">1.00</span></div>
+                    <div class="fx-group-label">EMBER</div>
+                    <div class="row"><label>Ember</label><input id="s3" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v3">1.00</span></div>
+                    <div class="row"><label>Eye Size</label><input id="s8" type="range" min="0.2" max="3" step="0.01" value="1"><span class="v" id="v8">1.00</span></div>
+                    <div class="fx-group-label">ATMOSPHERE</div>
                     <div class="row"><label>Dust</label><input id="s5" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v5">1.00</span></div>
                     <div class="row"><label>Grain</label><input id="s6" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v6">1.00</span></div>
                     <div class="row"><label>Vignette</label><input id="s7" type="range" min="0" max="2" step="0.01" value="1"><span class="v" id="v7">1.00</span></div>
-                    <div class="row"><label>Eye Size</label><input id="s8" type="range" min="0.2" max="3" step="0.01" value="1"><span class="v" id="v8">1.00</span></div>
                 </div>
             </div>
 
             <!-- PRESETS -->
             <div class="section" id="sec-presets">
-                <div class="section-hdr">PRESETS <span class="chev">▾</span></div>
+                <div class="section-hdr" role="button" tabindex="0">PRESETS <span class="chev">−</span></div>
                 <div class="section-body">
                     <div id="preset-list"></div>
                     <button class="btn" id="btn-save-preset">+ SAVE CURRENT</button>
@@ -253,11 +276,11 @@
 
             <!-- EXPORT -->
             <div class="section" id="sec-export">
-                <div class="section-hdr">EXPORT <span class="chev">▾</span></div>
+                <div class="section-hdr" role="button" tabindex="0">EXPORT <span class="chev">−</span></div>
                 <div class="section-body">
                     <div class="btn-row">
-                        <button class="btn" id="btn-screenshot">▼ PNG</button>
-                        <button class="btn" id="btn-export-json">▼ JSON</button>
+                        <button class="btn primary" id="btn-screenshot">↓ PNG</button>
+                        <button class="btn" id="btn-export-json">↓ JSON</button>
                     </div>
                 </div>
             </div>
@@ -291,8 +314,8 @@
         <div class="k"><kbd>S</kbd><span>Screenshot PNG</span></div>
         <div class="k"><kbd>M</kbd><span>Toggle composition markers</span></div>
         <div class="k"><kbd>C</kbd><span>Place storm center</span></div>
-        <div class="k"><kbd>1</kbd><span>Place eye 1</span></div>
-        <div class="k"><kbd>2</kbd><span>Place eye 2</span></div>
+        <div class="k"><kbd>1</kbd><span>Place left eye</span></div>
+        <div class="k"><kbd>2</kbd><span>Place right eye</span></div>
         <div class="k"><kbd>R</kbd><span>Reset all to defaults</span></div>
         <div class="k"><kbd>?</kbd><span>This help</span></div>
         <div class="k"><kbd>Esc</kbd><span>Cancel placement mode</span></div>
@@ -580,9 +603,9 @@ function setPlacing(mode) {
     state.placing = mode;
     stageEl.classList.toggle('mode-placing', !!mode);
     document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-    if (mode === 'circle') { stageEl.dataset.hint = 'CLICK TO PLACE STORM CENTER'; document.getElementById('btn-place-circle').classList.add('active'); }
-    else if (mode === 'eye1') { stageEl.dataset.hint = 'CLICK TO PLACE EYE 1'; document.getElementById('btn-place-eye1').classList.add('active'); }
-    else if (mode === 'eye2') { stageEl.dataset.hint = 'CLICK TO PLACE EYE 2'; document.getElementById('btn-place-eye2').classList.add('active'); }
+    if (mode === 'circle') { stageEl.dataset.hint = 'CLICK TO PLACE STORM CENTER  ·  ESC TO CANCEL'; document.getElementById('btn-place-circle').classList.add('active'); }
+    else if (mode === 'eye1') { stageEl.dataset.hint = 'CLICK TO PLACE LEFT EYE  ·  ESC TO CANCEL'; document.getElementById('btn-place-eye1').classList.add('active'); }
+    else if (mode === 'eye2') { stageEl.dataset.hint = 'CLICK TO PLACE RIGHT EYE  ·  ESC TO CANCEL'; document.getElementById('btn-place-eye2').classList.add('active'); }
 }
 document.getElementById('btn-place-circle').addEventListener('click', () => setPlacing(state.placing === 'circle' ? null : 'circle'));
 document.getElementById('btn-place-eye1').addEventListener('click', () => setPlacing(state.placing === 'eye1' ? null : 'eye1'));
@@ -784,7 +807,15 @@ document.getElementById('btn-reset-all').addEventListener('click', resetAll);
 // COLLAPSIBLE SECTIONS
 // ─────────────────────────────────────────────────────────────
 document.querySelectorAll('.section-hdr').forEach(h => {
-    h.addEventListener('click', () => h.parentElement.classList.toggle('collapsed'));
+    const toggle = () => {
+        const collapsed = h.parentElement.classList.toggle('collapsed');
+        const chev = h.querySelector('.chev');
+        if (chev) chev.textContent = collapsed ? '+' : '−';
+    };
+    h.addEventListener('click', toggle);
+    h.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
 });
 
 // ─────────────────────────────────────────────────────────────

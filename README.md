@@ -35,7 +35,7 @@ Pure WebGL 1.0 + vanilla JS. No build step, no dependencies. Single self-contain
 
 ## Files
 
-- `index.html` — main studio app
+- `index.html` — main studio app (canonical)
 - `skull_webgl_v2.html` — earlier single-shader version
 - `mortem_archivum.html` — fully generative p5.js interpretation (no source image needed)
 - `mortem_archivum.md` — algorithmic philosophy write-up
