@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortem Archivum — Generative Art</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --anthropic-dark: #141413;
+            --anthropic-light: #faf9f5;
+            --anthropic-mid-gray: #b0aea5;
+            --anthropic-light-gray: #e8e6dc;
+            --anthropic-orange: #d97757;
+            --anthropic-blue: #6a9bcc;
+            --anthropic-green: #788c5d;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--anthropic-light) 0%, #f5f3ee 100%);
+            min-height: 100vh;
+            color: var(--anthropic-dark);
+        }
+        .container {
+            display: flex;
+            min-height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(20,20,19,0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .sidebar h1 {
+            font-family: 'Lora', serif;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 6px;
+        }
+        .sidebar .subtitle {
+            color: var(--anthropic-mid-gray);
+            font-size: 12px;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+        .control-section { margin-bottom: 28px; }
+        .control-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--anthropic-dark);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-section h3::before {
+            content: '•';
+            color: var(--anthropic-orange);
+            font-weight: bold;
+        }
+        .seed-input {
+            width: 100%;
+            background: var(--anthropic-light);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-bottom: 10px;
+            border: 1px solid var(--anthropic-light-gray);
+            text-align: center;
+        }
+        .seed-input:focus {
+            outline: none;
+            border-color: var(--anthropic-orange);
+            box-shadow: 0 0 0 2px rgba(217,119,87,0.1);
+            background: white;
+        }
+        .seed-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .control-group { margin-bottom: 18px; }
+        .control-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--anthropic-dark);
+            margin-bottom: 6px;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: var(--anthropic-light-gray);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: #c86641;
+        }
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: var(--anthropic-orange);
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+        .value-display {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--anthropic-mid-gray);
+            min-width: 50px;
+            text-align: right;
+        }
+        .button {
+            background: var(--anthropic-orange);
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        .button:hover { background: #c86641; transform: translateY(-1px); }
+        .button:active { transform: translateY(0); }
+        .button.secondary { background: var(--anthropic-blue); }
+        .button.secondary:hover { background: #5a8bb8; }
+        .button.tertiary { background: var(--anthropic-green); }
+        .button.tertiary:hover { background: #6b7b52; }
+        .button-row { display: flex; gap: 8px; }
+        .button-row .button { flex: 1; }
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+        }
+        #canvas-container {
+            width: 100%;
+            max-width: 1000px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(20,20,19,0.15);
+            background: #1a1714;
+        }
+        #canvas-container canvas {
+            display: block;
+            width: 100% !important;
+            height: auto !important;
+        }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            font-size: 16px;
+            color: var(--anthropic-mid-gray);
+        }
+        @media (max-width: 700px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <h1>Mortem Archivum</h1>
+        <div class="subtitle">Storm catalogued. Mortality uncontained. A gridded archive of the irreducible.</div>
+
+        <div class="control-section">
+            <h3>Seed</h3>
+            <input type="number" id="seed-input" class="seed-input" value="2401" onchange="updateSeed()">
+            <div class="seed-controls">
+                <button class="button secondary" onclick="previousSeed()">← Prev</button>
+                <button class="button secondary" onclick="nextSeed()">Next →</button>
+            </div>
+            <button class="button tertiary" style="margin-bottom:0" onclick="randomSeedAndUpdate()">↻ Random</button>
+        </div>
+
+        <div class="control-section">
+            <h3>Parameters</h3>
+
+            <div class="control-group">
+                <label>Cloud Turbulence</label>
+                <div class="slider-container">
+                    <input type="range" id="cloudTurbulence" min="0.001" max="0.012" step="0.001" value="0.004" oninput="updateParam('cloudTurbulence', parseFloat(this.value))">
+                    <span class="value-display" id="cloudTurbulence-value">0.004</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Storm Speed</label>
+                <div class="slider-container">
+                    <input type="range" id="stormSpeed" min="0.001" max="0.010" step="0.001" value="0.003" oninput="updateParam('stormSpeed', parseFloat(this.value))">
+                    <span class="value-display" id="stormSpeed-value">0.003</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Dust Density</label>
+                <div class="slider-container">
+                    <input type="range" id="dustDensity" min="50" max="400" step="10" value="200" oninput="updateParam('dustDensity', parseInt(this.value))">
+                    <span class="value-display" id="dustDensity-value">200</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Ember Intensity</label>
+                <div class="slider-container">
+                    <input type="range" id="emberIntensity" min="0.0" max="1.0" step="0.05" value="0.7" oninput="updateParam('emberIntensity', parseFloat(this.value))">
+                    <span class="value-display" id="emberIntensity-value">0.70</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Grid Density</label>
+                <div class="slider-container">
+                    <input type="range" id="gridDensity" min="20" max="80" step="5" value="40" oninput="updateParam('gridDensity', parseInt(this.value))">
+                    <span class="value-display" id="gridDensity-value">40</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Actions</h3>
+            <div class="button-row" style="margin-bottom:8px">
+                <button class="button" onclick="resetParameters()">Reset</button>
+                <button class="button secondary" onclick="exportImage()">↓ Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="canvas-area">
+        <div id="canvas-container">
+            <div class="loading">Initializing archive...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// MORTEM ARCHIVUM — Generative Art
+// The archive confronts the storm. The grid confronts mortality.
+// ─────────────────────────────────────────────────────────────────────────────
+
+let params = {
+    seed: 2401,
+    cloudTurbulence: 0.004,
+    stormSpeed: 0.003,
+    dustDensity: 200,
+    emberIntensity: 0.7,
+    gridDensity: 40
+};
+const defaultParams = { ...params };
+
+// Canvas dimensions (16:9)
+const CW = 1200;
+const CH = 675;
+
+// Composition anchors
+const WIN_CX = 590, WIN_CY = 260, WIN_R = 118;
+const SKULL_CX = 300, SKULL_CY = 430, SKULL_W = 265, SKULL_H = 300;
+const BOOK_X = 690, BOOK_Y = 308, BOOK_W = 138, BOOK_H = 200;
+
+// System state
+let cloudParticles = [];
+let dustMotes = [];
+let skullPoints = [];
+let chainBeads = [];
+let animT = 0;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P5.JS LIFECYCLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setup() {
+    let canvas = createCanvas(CW, CH);
+    canvas.parent('canvas-container');
+    document.querySelector('.loading').style.display = 'none';
+    textFont('Courier New');
+    initializeSystem();
+}
+
+function initializeSystem() {
+    randomSeed(params.seed);
+    noiseSeed(params.seed);
+    animT = 0;
+
+    // Cloud particles inside the circular window
+    cloudParticles = [];
+    for (let i = 0; i < 1600; i++) {
+        let angle = random(TWO_PI);
+        let r = sqrt(random()) * WIN_R * 0.97;
+        cloudParticles.push({
+            x: WIN_CX + cos(angle) * r,
+            y: WIN_CY + sin(angle) * r,
+            alpha: random(30, 105),
+            size: random(0.7, 2.4),
+            noiseOff: random(500)
+        });
+    }
+
+    // Atmospheric dust motes
+    dustMotes = [];
+    for (let i = 0; i < params.dustDensity; i++) {
+        dustMotes.push({
+            x: random(CW),
+            y: random(CH),
+            alpha: random(12, 42),
+            size: random(1.0, 3.2),
+            noiseOff: random(1000)
+        });
+    }
+
+    skullPoints = buildSkullCloud();
+    chainBeads = buildChain();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FBM NOISE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function fbm(x, y, octaves) {
+    octaves = octaves || 5;
+    let v = 0, amp = 0.5, freq = 1.0;
+    for (let i = 0; i < octaves; i++) {
+        v += amp * noise(x * freq, y * freq);
+        amp *= 0.5;
+        freq *= 2.1;
+    }
+    return v;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SKULL POINT CLOUD BUILDER
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildSkullCloud() {
+    let pts = [];
+    let cx = SKULL_CX, cy = SKULL_CY, w = SKULL_W, h = SKULL_H;
+
+    // Anatomical landmarks
+    let cranCy = cy - h * 0.11;
+    let cranRx = w * 0.465, cranRy = h * 0.365;
+
+    let jawCy = cy + h * 0.22;
+    let jawRx = w * 0.31, jawRy = h * 0.30;
+
+    let leX = cx - w * 0.155, leY = cy - h * 0.065;
+    let leRx = w * 0.115, leRy = h * 0.088;
+    let reX = cx + w * 0.155, reY = cy - h * 0.065;
+    let reRx = w * 0.115, reRy = h * 0.088;
+
+    function inEye(px, py) {
+        return (pow((px - leX) / leRx, 2) + pow((py - leY) / leRy, 2) < 1) ||
+               (pow((px - reX) / reRx, 2) + pow((py - reY) / reRy, 2) < 1);
+    }
+    function inNasal(px, py) {
+        let ncy = cy + h * 0.105, nw = w * 0.095, nh = h * 0.135;
+        let t2 = (py - (ncy - nh * 0.05)) / nh;
+        return t2 > 0 && t2 < 1 && abs(px - cx) < nw * (1 - t2 * 0.75);
+    }
+    function inCranium(px, py) {
+        return pow((px - cx) / cranRx, 2) + pow((py - cranCy) / cranRy, 2) < 1;
+    }
+    function inJaw(px, py) {
+        return pow((px - cx) / jawRx, 2) + pow((py - jawCy) / jawRy, 2) < 1;
+    }
+
+    // Cranium surface outline
+    for (let i = 0; i < 240; i++) {
+        let angle = random(-PI * 0.82, PI * 0.82);
+        let r = random(0.90, 1.06);
+        let px = cx + cos(angle) * cranRx * r;
+        let py = cranCy + sin(angle) * cranRy * r;
+        if (!inEye(px, py)) {
+            pts.push({ x: px, y: py, alpha: random(155, 230), size: random(1.1, 2.7), n: random(200) });
+        }
+    }
+
+    // Jaw surface outline
+    for (let i = 0; i < 170; i++) {
+        let angle = random(PI * 0.08, PI * 0.92);
+        let r = random(0.88, 1.06);
+        let px = cx + cos(angle) * jawRx * r;
+        let py = jawCy + sin(angle) * jawRy * r;
+        pts.push({ x: px, y: py, alpha: random(140, 205), size: random(1.0, 2.5), n: random(200) });
+    }
+
+    // Zygomatic arches
+    for (let side of [-1, 1]) {
+        for (let i = 0; i < 45; i++) {
+            let px = cx + side * (w * 0.39 + random(-12, 5));
+            let py = cy + h * 0.015 + random(-22, 22);
+            pts.push({ x: px, y: py, alpha: random(115, 180), size: random(1.0, 2.2), n: random(200) });
+        }
+    }
+
+    // Eye socket rings (dense dark edges)
+    for (let i = 0; i < 80; i++) {
+        let a = random(TWO_PI);
+        let r = random(0.88, 1.12);
+        pts.push({ x: leX + cos(a) * leRx * r, y: leY + sin(a) * leRy * r, alpha: random(175, 250), size: random(1.4, 3.0), n: random(200) });
+        pts.push({ x: reX + cos(a) * reRx * r, y: reY + sin(a) * reRy * r, alpha: random(175, 250), size: random(1.4, 3.0), n: random(200) });
+    }
+
+    // Interior fill (low opacity)
+    for (let i = 0; i < 420; i++) {
+        let px = cx + random(-w * 0.43, w * 0.43);
+        let py = cy + random(-h * 0.44, h * 0.44);
+        if (!inCranium(px, py) && !inJaw(px, py)) continue;
+        if (inEye(px, py) || inNasal(px, py)) continue;
+        pts.push({ x: px, y: py, alpha: random(30, 88), size: random(0.5, 1.8), n: random(200) });
+    }
+
+    // Teeth (bottom of mandible)
+    let toothY1 = jawCy + jawRy * 0.62, toothY2 = jawCy + jawRy * 0.90;
+    let teethCount = 5 + floor(random(2));
+    for (let t2 = 0; t2 < teethCount; t2++) {
+        let tcx = cx - w * 0.17 + t2 * (w * 0.34 / (teethCount - 1));
+        for (let j = 0; j < 14; j++) {
+            pts.push({ x: tcx + random(-w * 0.022, w * 0.022), y: random(toothY1, toothY2), alpha: random(155, 225), size: random(1.0, 2.2), n: random(200) });
+        }
+    }
+
+    return pts;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAIN BUILDER
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildChain() {
+    let beads = [];
+    let sx = SKULL_CX - SKULL_W * 0.40;
+    let sy = SKULL_CY + SKULL_H * 0.35;
+    let count = 14 + floor(random(5));
+    for (let i = 0; i < count; i++) {
+        beads.push({
+            x: sx + i * 19 + sin(i * 0.72 + random(0.3)) * 9,
+            y: sy + pow(i * 0.7, 1.4) * 4 + random(-3, 3),
+            size: 5.5 + sin(i * 0.6) * 1.8
+        });
+    }
+    return beads;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRAW LOOP
+// ─────────────────────────────────────────────────────────────────────────────
+
+function draw() {
+    animT += params.stormSpeed;
+
+    // Parchment ground
+    background(237, 233, 222);
+
+    drawGrid();
+    drawCircularWindow();
+    drawBook();
+    drawSkull();
+    drawChain();
+    drawDust();
+    drawRulerOverlays();
+    drawGrain();
+    drawVignette();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: ARCHIVAL GRID
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawGrid() {
+    let gd = params.gridDensity;
+    stroke(185, 177, 158, 85);
+    strokeWeight(0.5);
+
+    for (let x = gd; x < CW; x += gd) line(x, 0, x, CH);
+    for (let y = gd; y < CH; y += gd) line(0, y, CW, y);
+
+    // Major grid lines (every 5 minor)
+    stroke(165, 157, 138, 110);
+    strokeWeight(0.8);
+    for (let x = gd * 5; x < CW; x += gd * 5) line(x, 0, x, CH);
+    for (let y = gd * 5; y < CH; y += gd * 5) line(0, y, CW, y);
+
+    // Corner registration marks
+    let rm = 22;
+    stroke(80, 74, 62, 180);
+    strokeWeight(1.0);
+    let corners = [[0, 0], [CW, 0], [0, CH], [CW, CH]];
+    let dirs = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+    for (let i = 0; i < 4; i++) {
+        let [cx, cy] = corners[i];
+        let [dx, dy] = dirs[i];
+        line(cx + dx * 8, cy, cx + dx * rm, cy);
+        line(cx, cy + dy * 8, cx, cy + dy * rm);
+        noFill();
+        stroke(80, 74, 62, 130);
+        arc(cx + dx * 10, cy + dy * 10, 8, 8, 0, TWO_PI);
+    }
+
+    // Numeric labels along top and left edges
+    fill(120, 112, 92, 130);
+    noStroke();
+    textSize(6.5);
+    textAlign(CENTER, BOTTOM);
+    for (let x = gd * 5; x < CW - 10; x += gd * 5) {
+        text(x, x, 18);
+    }
+    textAlign(RIGHT, CENTER);
+    for (let y = gd * 5; y < CH - 10; y += gd * 5) {
+        text(y, 22, y);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: CIRCULAR STORM WINDOW
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawCircularWindow() {
+    // Determine lightning intensity via deterministic noise threshold
+    let lv = noise(animT * 0.12 + params.seed * 0.0007, 88.4);
+    let lightningA = lv > 0.84 ? (lv - 0.84) * 7.0 * 255 : 0;
+
+    drawingContext.save();
+    drawingContext.beginPath();
+    drawingContext.arc(WIN_CX, WIN_CY, WIN_R, 0, Math.PI * 2);
+    drawingContext.clip();
+
+    // Dark sky
+    noStroke();
+    fill(22, 18, 14);
+    ellipse(WIN_CX, WIN_CY, WIN_R * 2 + 2);
+
+    // Cloud gradient base — faint lighter area in upper center
+    let cg = drawingContext.createRadialGradient(WIN_CX, WIN_CY - WIN_R * 0.3, 0, WIN_CX, WIN_CY, WIN_R);
+    cg.addColorStop(0, 'rgba(80,74,64,0.5)');
+    cg.addColorStop(1, 'rgba(12,10,8,0)');
+    drawingContext.fillStyle = cg;
+    drawingContext.fillRect(WIN_CX - WIN_R, WIN_CY - WIN_R, WIN_R * 2, WIN_R * 2);
+
+    // Lightning flash overlay
+    if (lightningA > 0) {
+        drawingContext.fillStyle = `rgba(200,210,235,${lightningA / 255 * 0.62})`;
+        drawingContext.fillRect(WIN_CX - WIN_R, WIN_CY - WIN_R, WIN_R * 2, WIN_R * 2);
+    }
+
+    // Cloud particles — FBM-driven turbulence
+    noStroke();
+    let scl = params.cloudTurbulence;
+    let spd = params.stormSpeed * 22;
+    let lightenExtra = lightningA > 0 ? lightningA * 0.5 : 0;
+
+    for (let p of cloudParticles) {
+        let nx = p.x * scl + animT * 0.5;
+        let ny = p.y * scl + p.noiseOff * 0.01;
+        let angle = fbm(nx, ny) * TWO_PI * 2.4;
+        p.x += cos(angle) * spd;
+        p.y += sin(angle) * spd;
+
+        // Respawn outside boundary
+        let dx = p.x - WIN_CX, dy = p.y - WIN_CY;
+        if (dx * dx + dy * dy > WIN_R * WIN_R) {
+            let a2 = random(TWO_PI);
+            let r2 = sqrt(random()) * WIN_R * 0.92;
+            p.x = WIN_CX + cos(a2) * r2;
+            p.y = WIN_CY + sin(a2) * r2;
+        }
+
+        let bright = min(200 + lightenExtra, 255);
+        fill(bright, bright - 8, bright - 18, p.alpha + lightenExtra * 0.3);
+        ellipse(p.x, p.y, p.size);
+    }
+
+    drawingContext.restore();
+
+    // Outer ring
+    noFill();
+    stroke(20, 17, 13, 230);
+    strokeWeight(7);
+    ellipse(WIN_CX, WIN_CY, WIN_R * 2);
+
+    // Inner beveled rim
+    stroke(55, 49, 38, 140);
+    strokeWeight(2.5);
+    ellipse(WIN_CX, WIN_CY, WIN_R * 2 - 9);
+
+    // Outer shadow halo
+    for (let r = 0; r < 5; r++) {
+        stroke(10, 8, 5, 60 - r * 12);
+        strokeWeight(1);
+        ellipse(WIN_CX, WIN_CY, WIN_R * 2 + r * 4 + 10);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: BOOK SILHOUETTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawBook() {
+    let bx = BOOK_X, by = BOOK_Y, bw = BOOK_W, bh = BOOK_H;
+
+    // Book body shadow
+    fill(15, 12, 9, 60);
+    noStroke();
+    rect(bx + 4, by + 4, bw, bh, 3);
+
+    // Book body
+    fill(30, 25, 19, 210);
+    noStroke();
+    rect(bx, by, bw, bh, 2);
+
+    // Spine
+    fill(48, 40, 30, 240);
+    rect(bx, by, 14, bh, 2);
+
+    // Spine detail lines
+    stroke(70, 58, 44, 160);
+    strokeWeight(0.6);
+    for (let i = 0; i < 3; i++) {
+        let ly = by + bh * (0.15 + i * 0.22);
+        line(bx, ly, bx + 14, ly);
+    }
+
+    // Eagle emblem circle
+    noFill();
+    stroke(118, 106, 82, 170);
+    strokeWeight(0.9);
+    let ecx = bx + bw * 0.56, ecy = by + bh * 0.33;
+    ellipse(ecx, ecy, 52, 52);
+    ellipse(ecx, ecy, 36, 36);
+
+    // Simplified eagle body
+    fill(100, 90, 70, 140);
+    noStroke();
+    // Wings
+    beginShape();
+    vertex(ecx - 22, ecy - 2);
+    vertex(ecx - 12, ecy - 12);
+    vertex(ecx, ecy - 5);
+    vertex(ecx + 12, ecy - 12);
+    vertex(ecx + 22, ecy - 2);
+    vertex(ecx + 14, ecy + 4);
+    vertex(ecx, ecy + 2);
+    vertex(ecx - 14, ecy + 4);
+    endShape(CLOSE);
+    // Body
+    fill(88, 78, 58, 160);
+    ellipse(ecx, ecy + 4, 9, 14);
+    // Head
+    ellipse(ecx, ecy - 10, 8, 8);
+
+    // Title text
+    fill(148, 133, 105, 185);
+    noStroke();
+    textSize(6.8);
+    textAlign(CENTER, TOP);
+    textStyle(NORMAL);
+    text('PSALMS OF', ecx, by + bh * 0.54);
+    text('AMERICAN', ecx, by + bh * 0.62);
+    text('PATRIOTISM', ecx, by + bh * 0.70);
+
+    // Page edges
+    stroke(110, 100, 80, 80);
+    strokeWeight(0.5);
+    for (let i = 1; i < 4; i++) {
+        let ox = i * 0.8;
+        line(bx + bw + ox, by + 4, bx + bw + ox, by + bh - 4);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: SKULL POINT CLOUD + EYE EMBER
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawSkull() {
+    let cx = SKULL_CX, cy = SKULL_CY, w = SKULL_W, h = SKULL_H;
+    let leX = cx - w * 0.155, leY = cy - h * 0.065;
+    let reX = cx + w * 0.155, reY = cy - h * 0.065;
+    let eyeR = w * 0.088;
+
+    // Eye ember glow — layered radial fade
+    let pulse = 0.58 + 0.42 * sin(animT * 52.0);
+    let gI = params.emberIntensity * pulse;
+
+    for (let r = eyeR * 2.2; r > eyeR * 0.3; r -= eyeR * 0.22) {
+        let frac = 1 - r / (eyeR * 2.2);
+        let a = gI * frac * frac * 210;
+        fill(195, 58, 12, a);
+        noStroke();
+        ellipse(leX, leY, r * 2, r * 1.55);
+        ellipse(reX, reY, r * 2, r * 1.55);
+    }
+
+    // Inner hot core
+    let coreA = gI * 200;
+    fill(255, 160, 40, coreA);
+    noStroke();
+    ellipse(leX, leY, eyeR * 0.55, eyeR * 0.4);
+    ellipse(reX, reY, eyeR * 0.55, eyeR * 0.4);
+
+    // Skull point cloud with subtle per-point noise drift
+    noStroke();
+    for (let pt of skullPoints) {
+        let t2 = animT * 7.5;
+        let ox = (noise(pt.n, t2) - 0.5) * 2.8;
+        let oy = (noise(pt.n + 77, t2) - 0.5) * 2.8;
+        fill(40, 35, 26, pt.alpha);
+        ellipse(pt.x + ox, pt.y + oy, pt.size);
+    }
+
+    // Nasal cavity dark void (dark fill over any stray points)
+    let ncx = cx, ncy = cy + h * 0.105;
+    fill(237, 233, 222, 140);
+    noStroke();
+    triangle(ncx, ncy - h * 0.015, ncx - w * 0.075, ncy + h * 0.11, ncx + w * 0.075, ncy + h * 0.11);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: CHAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawChain() {
+    // Links
+    stroke(72, 64, 50, 175);
+    strokeWeight(1.4);
+    noFill();
+    for (let i = 0; i < chainBeads.length - 1; i++) {
+        let a = chainBeads[i], b = chainBeads[i + 1];
+        line(a.x, a.y, b.x, b.y);
+    }
+
+    // Beads
+    for (let b of chainBeads) {
+        fill(88, 78, 60, 215);
+        stroke(55, 48, 36, 180);
+        strokeWeight(0.8);
+        ellipse(b.x, b.y, b.size, b.size * 0.8);
+        // Highlight
+        fill(130, 118, 95, 90);
+        noStroke();
+        ellipse(b.x - b.size * 0.15, b.y - b.size * 0.2, b.size * 0.3, b.size * 0.22);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: ATMOSPHERIC DUST MOTES
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawDust() {
+    noStroke();
+    for (let m of dustMotes) {
+        let nx = m.x * 0.0028 + m.noiseOff + animT * 0.09;
+        let ny = m.y * 0.0028 + m.noiseOff * 1.3;
+        let angle = noise(nx, ny) * TWO_PI * 2;
+        m.x += cos(angle) * 0.28;
+        m.y += sin(angle) * 0.28;
+        if (m.x < 0) m.x = CW;
+        if (m.x > CW) m.x = 0;
+        if (m.y < 0) m.y = CH;
+        if (m.y > CH) m.y = 0;
+        fill(228, 215, 188, m.alpha);
+        ellipse(m.x, m.y, m.size);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: ARCHIVAL RULER OVERLAYS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawRulerOverlays() {
+    let gd = params.gridDensity;
+
+    stroke(100, 92, 75, 155);
+    strokeWeight(0.8);
+
+    // Left ruler baseline
+    line(34, 20, 34, CH - 20);
+    // Top ruler baseline
+    line(20, 34, CW - 20, 34);
+
+    // Left ticks
+    for (let y = gd; y < CH - 10; y += gd) {
+        let tl = (y % (gd * 5) === 0) ? 9 : 5;
+        line(34 - tl, y, 34, y);
+    }
+    // Top ticks
+    for (let x = gd; x < CW - 10; x += gd) {
+        let tl = (x % (gd * 5) === 0) ? 9 : 5;
+        line(x, 34 - tl, x, 34);
+    }
+
+    // Dimension annotation: width of circular window
+    let dimY = WIN_CY + WIN_R + 28;
+    stroke(95, 85, 68, 110);
+    strokeWeight(0.6);
+    line(WIN_CX - WIN_R, dimY, WIN_CX + WIN_R, dimY);
+    line(WIN_CX - WIN_R, dimY - 6, WIN_CX - WIN_R, dimY + 6);
+    line(WIN_CX + WIN_R, dimY - 6, WIN_CX + WIN_R, dimY + 6);
+
+    fill(95, 85, 68, 130);
+    noStroke();
+    textSize(7);
+    textAlign(CENTER, BOTTOM);
+    text('Ø ' + (WIN_R * 2), WIN_CX, dimY - 3);
+
+    // Dimension annotation: skull height
+    let dimX = SKULL_CX - SKULL_W * 0.52 - 12;
+    let sy0 = SKULL_CY - SKULL_H * 0.44;
+    let sy1 = SKULL_CY + SKULL_H * 0.44;
+    stroke(95, 85, 68, 80);
+    strokeWeight(0.6);
+    line(dimX, sy0, dimX, sy1);
+    line(dimX - 5, sy0, dimX + 5, sy0);
+    line(dimX - 5, sy1, dimX + 5, sy1);
+
+    fill(95, 85, 68, 100);
+    noStroke();
+    textAlign(RIGHT, CENTER);
+    textSize(6.5);
+    push();
+    translate(dimX - 7, (sy0 + sy1) / 2);
+    rotate(-HALF_PI);
+    text(SKULL_H + ' px', 0, 0);
+    pop();
+
+    // Small "ARCHIVAL REF" stamp in upper right
+    fill(100, 90, 72, 100);
+    noStroke();
+    textAlign(RIGHT, TOP);
+    textSize(6.5);
+    text('ARCHIVAL REF: ' + params.seed.toString().padStart(6, '0'), CW - 22, 22);
+    text('SERIES: MORTEM / CLASS: CRANIUM', CW - 22, 31);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: FILM GRAIN
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawGrain() {
+    noStroke();
+    for (let i = 0; i < 1800; i++) {
+        let gx = random(CW);
+        let gy = random(CH);
+        let ga = random(4, 16);
+        fill(random(70, 195), random(65, 180), random(55, 165), ga);
+        ellipse(gx, gy, random(0.5, 1.5));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAYER: VIGNETTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function drawVignette() {
+    let vg = drawingContext.createRadialGradient(
+        CW / 2, CH / 2, CH * 0.18,
+        CW / 2, CH / 2, CH * 0.88
+    );
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(0.6, 'rgba(5,3,1,0.18)');
+    vg.addColorStop(1, 'rgba(6,4,1,0.72)');
+    drawingContext.fillStyle = vg;
+    drawingContext.fillRect(0, 0, CW, CH);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UI HANDLERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function updateParam(name, value) {
+    params[name] = value;
+    document.getElementById(name + '-value').textContent =
+        Number.isInteger(value) ? value : value.toFixed(3);
+
+    // Rebuild dust if density changed
+    if (name === 'dustDensity') {
+        randomSeed(params.seed + 7777);
+        noiseSeed(params.seed + 7777);
+        dustMotes = [];
+        for (let i = 0; i < params.dustDensity; i++) {
+            dustMotes.push({
+                x: random(CW), y: random(CH),
+                alpha: random(12, 42),
+                size: random(1.0, 3.2),
+                noiseOff: random(1000)
+            });
+        }
+        randomSeed(params.seed);
+        noiseSeed(params.seed);
+    }
+}
+
+function updateSeedDisplay() {
+    document.getElementById('seed-input').value = params.seed;
+    document.getElementById('archival-seed') && (document.getElementById('archival-seed').textContent = params.seed);
+}
+
+function updateSeed() {
+    let v = parseInt(document.getElementById('seed-input').value);
+    if (v && v > 0) { params.seed = v; initializeSystem(); }
+    else updateSeedDisplay();
+}
+
+function previousSeed() {
+    params.seed = Math.max(1, params.seed - 1);
+    updateSeedDisplay();
+    initializeSystem();
+}
+
+function nextSeed() {
+    params.seed = params.seed + 1;
+    updateSeedDisplay();
+    initializeSystem();
+}
+
+function randomSeedAndUpdate() {
+    params.seed = Math.floor(Math.random() * 99999) + 1;
+    updateSeedDisplay();
+    initializeSystem();
+}
+
+function resetParameters() {
+    params = { ...defaultParams };
+    document.getElementById('cloudTurbulence').value = params.cloudTurbulence;
+    document.getElementById('cloudTurbulence-value').textContent = params.cloudTurbulence.toFixed(3);
+    document.getElementById('stormSpeed').value = params.stormSpeed;
+    document.getElementById('stormSpeed-value').textContent = params.stormSpeed.toFixed(3);
+    document.getElementById('dustDensity').value = params.dustDensity;
+    document.getElementById('dustDensity-value').textContent = params.dustDensity;
+    document.getElementById('emberIntensity').value = params.emberIntensity;
+    document.getElementById('emberIntensity-value').textContent = params.emberIntensity.toFixed(2);
+    document.getElementById('gridDensity').value = params.gridDensity;
+    document.getElementById('gridDensity-value').textContent = params.gridDensity;
+    updateSeedDisplay();
+    initializeSystem();
+}
+
+function exportImage() {
+    saveCanvas('mortem_archivum_seed' + params.seed, 'png');
+}
+
+window.addEventListener('load', function () {
+    updateSeedDisplay();
+});
+</script>
+</body>
+</html>
